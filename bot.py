@@ -213,7 +213,7 @@ class bot:
         font = ImageFont.truetype("Heebo-ExtraBold.ttf",75)
         w,h = font.getsize(text)
         draw = ImageDraw.Draw(img)
-        draw.text(((900 - w) / 2, (900 - h) / 2), text, (255, 255, 255), align="center", font = font)
+        draw.text(((900 - w) / 2, (900 - h) / 2), text, fill = "black", align="center", font = font)
         img = img.save(filename)
         media_ids = self.api.media_upload(filename).media_id
         return media_ids
