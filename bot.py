@@ -210,7 +210,7 @@ class bot:
     def upload_font_pic(self, text = None):
         filename = "temp.jpg"
         img = Image.new('RGB',(900,900),'white')
-        font = ImageFont.truetype("arial.ttf",75)
+        font = ImageFont.truetype("Heebo-ExtraBold.ttf",75)
         w,h = font.getsize(text)
         draw = ImageDraw.Draw(img)
         draw.text(((900-w)/2,(900-h)/2),text,font=font, fill="black")
