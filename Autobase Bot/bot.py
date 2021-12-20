@@ -6,6 +6,8 @@ from requests_oauthlib import OAuth1
 import re
 from PIL import Image, ImageDraw, ImageFont
 
+#yo
+
 class bot:
     def __init__(self):
         self.auth = tweepy.OAuthHandler(config.consumer_key, config.consumer_secret)
