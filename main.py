@@ -16,11 +16,9 @@ def run():
                 else:
                     dmslist[x]['message'] = dmslist[x]['message'].replace(config.trigger_text_to_pic, "")
                     bot.post_font_pic(text = dmslist[x]['message'], sender_id=dmslist[x]['sender_id'])
-                time.sleep(1)
-            time.sleep(29)
+                time.sleep(5)
             for x in range(len(dmslist)):
                 bot.delete_DM(dmslist[x]['id'])
-            time.sleep(30)
         else:
             time.sleep(60)
             

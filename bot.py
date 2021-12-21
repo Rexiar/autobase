@@ -6,7 +6,6 @@ from requests_oauthlib import OAuth1
 import re
 from PIL import Image, ImageDraw, ImageFont
 
-#yo
 
 class bot:
     def __init__(self):
@@ -206,14 +205,37 @@ class bot:
                         pass
         else:
             self.send_error(sender_id = sender_id, x = 'ERROR: Wrong Attachment')
+
+    def fit_text(self, text = None, max_width = 0, font = None):
+        lines = list()
+        if font.getsize(text)[0]  <= max_width:
+            lines.append(text)
+        else:
+            words = text.split(' ')
+            i = 0
+            while i < len(words):
+                line = ''
+                while i < len(words) and font.getsize(line + words[i])[0] <= max_width:
+                    line = line + words[i]+ " "
+                    i += 1
+                if not line:
+                    line = words[i]
+                    i += 1
+                lines.append(line)
+        return lines
     
     def upload_font_pic(self, text = None):
+        y = 0
         filename = "temp.jpg"
         img = Image.new('RGB',(900,900),'white')
-        font = ImageFont.truetype("Heebo-ExtraBold.ttf",75)
+        font = ImageFont.truetype('Heebo-ExtraBold.ttf',round(75/(1+len(text)**0.00001)))
+        print(round(75/(1+len(text)**0.00001)))
         w,h = font.getsize(text)
         draw = ImageDraw.Draw(img)
-        draw.text(((900 - w) / 2, (900 - h) / 2), text, fill = "black", align="center", font = font)
+        lines = self.fit_text(text = text, max_width=900, font = font)
+        for line in lines:
+            draw.text((0,y), line, fill="black", font=font)
+            y = y + h
         img = img.save(filename)
         media_ids = self.api.media_upload(filename).media_id
         return media_ids
@@ -235,4 +257,8 @@ class bot:
             pass
 
     def delete_DM(self,id):
-        self.api.delete_direct_message(id)
+        try:
+            self.api.delete_direct_message(id)
+        except Exception as x:
+            print(x)
+            pass
