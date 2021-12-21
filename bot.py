@@ -228,8 +228,8 @@ class bot:
         y = 0
         filename = "temp.jpg"
         img = Image.new('RGB',(900,900),'white')
-        font = ImageFont.truetype('Heebo-ExtraBold.ttf',round(75/(1+len(text)**0.00001)))
-        print(round(75/(1+len(text)**0.00001)))
+        font = ImageFont.truetype('Heebo-ExtraBold.ttf',round(75/(1+len(text)**(1/2))))
+        print(round(75/(1+len(text)**(1/2))))
         w,h = font.getsize(text)
         draw = ImageDraw.Draw(img)
         lines = self.fit_text(text = text, max_width=900, font = font)
