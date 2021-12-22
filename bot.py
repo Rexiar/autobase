@@ -16,7 +16,7 @@ class bot:
         self.trigger2 = config.trigger_text_to_pic
     
     def send_error(self, sender_id = None, x = None):
-        self.api.send_direct_message(recipient_id = sender_id, text='[BOT] ERROR')
+        self.api.send_direct_message(recipient_id = sender_id, text=('[BOT] ERROR karena ',x))
         print(x)
 
     def read_dm(self):
@@ -26,31 +26,43 @@ class bot:
             for x in range(len(self.dms)):
                 message = self.dms[x].message_create['message_data']['text']
                 id = self.dms[x].id
-                if self.trigger in message.lower() or self.trigger2 in message.lower():
-                    sender_id = self.dms[x].message_create['sender_id']
-                    if 'attachment' not in self.dms[x].message_create['message_data']:
-                        if len(self.dms[x].message_create['message_data']['entities']['urls'])>0:
-                            print(message)
-                            dmslist.append(dict(message = message, sender_id = sender_id, id = id, link = self.dms[x].message_create['message_data']['entities']['urls'][0]['expanded_url'], media = None, media_url = None, type = "link"))
-                        else:
-                            print(message)
-                            dmslist.append(dict(message = message, sender_id = sender_id, id = id,  media = None, media_url = None, type = None))
-                            dmslist.reverse()
+                sender_id = self.dms[x].message_create['sender_id']
+                link = None
+                media_url = None
+                _type = None
+                if self.trigger in message.lower():
+                    print(message)
+                    if 'attachment' in self.dms[x].message_create['message_data']:
+                        _type="photo"
+                        media_url = self.dms[x].message_create['message_data']['attachment']['media']['media_url']
+                    elif len(self.dms[x].message_create['message_data']['entities']['urls'])>0:
+                        _type="link"
+                        link = self.dms[x].message_create['message_data']['entities']['urls'][0]['expanded_url']
                     else:
-                        if self.trigger2 not in message.lower():
-                            print(message)
-                            dmslist.append(dict(message = message, sender_id = sender_id, id = id,  media = None, link = None, media_url = self.dms[x].message_create['message_data']['attachment']['media']['media_url'], type = self.dms[x].message_create['message_data']['attachment']['media']['type']))
-                            dmslist.reverse()
-                        else:
-                            self.send_error(sender_id = sender_id, x = "[BOT] ERROR")
-                            pass
+                        _type = "text"
+                    dmslist.append(dict(message = message, sender_id = sender_id, id = id, link = link, media_url = media_url, type = _type))
+                    dmslist.reverse()
+                elif self.trigger2 in message.lower():
+                    if len(message) < 1230:
+                        print(message)
+                        _type = "tweet2pic"
+                        dmslist.append(dict(message = message, sender_id = sender_id, id = id, link = link, media_url = media_url, type = _type))
+                        dmslist.reverse()
+                    else:
+                        self.send_error(sender_id = sender_id, x = "huruf terlalu banyak")
         except Exception as x:
             print(x)
-            time.sleep(60)
             pass
         return dmslist
 
-    def post_tweet(self, text = None, sender_id = None):
+    def post_tweet(self, text = None, sender_id = None, type = None, media_url = None, link = None):
+        media_ids = []
+        if type == 'photo':
+            media_id = self.tweet_attachment(media_url = media_url, sender_id = sender_id)
+            media_ids.append(media_id)
+            text = ' '.join(re.sub("(@[A-Za-z0-9]+)|(\w+:\/\/\S+)", " ",text).split())
+        elif type == 'link':
+            text = ' '.join(re.sub("(@[A-Za-z0-9]+)|(\w+:\/\/\S+)", " ",text).split())
         if len(text) > 280:
             tweet1 = 0
             while len(text) >280:
@@ -61,7 +73,7 @@ class bot:
                 tweet = text[first:last-len(split[-1])] + '(cont..)'
                 if tweet1 == 0:
                     try:
-                        first_tweet = self.api.update_status(tweet)
+                        first_tweet = self.api.update_status(tweet, media_ids = media_ids, attachment_url = link)
                         tweet1 = first_tweet.id
                         try:
                             self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1))
@@ -85,7 +97,7 @@ class bot:
             self.api.update_status(tweet, in_reply_to_status_id = tweet1, auto_populate_reply_metadata = True)
         else:
             try:
-                tweet = self.api.update_status(text)
+                tweet = self.api.update_status(text, media_ids = media_ids, attachment_url = link)
                 try:
                     self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet.id))
                 except Exception as x:
@@ -105,136 +117,48 @@ class bot:
                 media_ids = self.api.media_upload(filename).media_id
                 return media_ids
         else:
-            self.send_error(sender_id = sender_id, x = 'ERROR: Image not uploaded')
+            self.send_error(sender_id = sender_id, x = 'gambar gagal ter-upload')
             pass
-
-    def post_tweet_with_media(self, text = None, sender_id = None, type = None, media_url = None, link = None):
-        if type == 'photo':
-            media_ids = list()
-            media_id = self.tweet_attachment(media_url = media_url, sender_id = sender_id)
-            media_ids.append(media_id)
-            text = ' '.join(re.sub("(@[A-Za-z0-9]+)|(\w+:\/\/\S+)", " ",text).split())
-            if len(text) > 280:
-                tweet1 = 0
-                while len(text) >280:
-                    first = 0
-                    last = 272
-                    very_last = len(text)
-                    split = text[260:last].split(' ')
-                    tweet = text[first:last-len(split[-1])] + '(cont..)'
-                    if tweet1 == 0:
-                        try:
-                            first_tweet = self.api.update_status(tweet, media_ids = media_ids)
-                            tweet1 = first_tweet.id
-                            try:
-                                self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1))
-                            except Exception as x:
-                                print(x)
-                                pass
-                        except Exception as x:
-                            self.send_error(sender_id = sender_id, x = x)
-                            pass
-                    else:
-                        try:
-                            reply_tweet = self.api.update_status(tweet, in_reply_to_status_id = tweet1, auto_populate_reply_metadata = True)
-                            tweet1 = reply_tweet.id
-                            time.sleep(2)
-                        except Exception as x:
-                            self.send_error(sender_id = sender_id, x = x)
-                            pass
-                    text = text[last-len(split[-1]):very_last]
-                    tweet = text[first:last-len(split[-1])]
-                    time.sleep(2)
-                self.api.update_status(tweet, in_reply_to_status_id = tweet1, auto_populate_reply_metadata = True)
-            else:
-                try:
-                    tweet = self.api.update_status(status = text, media_ids = media_ids)
-                    try:
-                        self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet.id))
-                    except Exception as x:
-                        print(x)
-                        pass
-                except Exception as x:
-                    print(x)
-                    pass
-        elif link != None:
-            if 'photo' not in link:
-                text = ' '.join(re.sub("(@[A-Za-z0-9]+)|(\w+:\/\/\S+)", " ",text).split())
-                if len(text) > 280:
-                    tweet1 = 0
-                    while len(text) >280:
-                        first = 0
-                        last = 272
-                        very_last = len(text)
-                        split = text[260:last].split(' ')
-                        tweet = text[first:last-len(split[-1])] + '(cont..)'
-                        if tweet1 == 0:
-                            try:
-                                first_tweet = self.api.update_status(tweet, attachment_url = link)
-                                tweet1 = first_tweet.id
-                                try:
-                                    self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1))
-                                except Exception as x:
-                                    print(x)
-                                    pass
-                            except Exception as x:
-                                self.send_error(sender_id = sender_id, x = x)
-                                pass
-                        else:
-                            try:
-                                reply_tweet = self.api.update_status(tweet, in_reply_to_status_id = tweet1, auto_populate_reply_metadata = True)
-                                tweet1 = reply_tweet.id
-                                time.sleep(2)
-                            except Exception as x:
-                                self.send_error(sender_id = sender_id, x = x)
-                                pass
-                        text = text[last-len(split[-1]):very_last]
-                        tweet = text[first:last-len(split[-1])]
-                        time.sleep(2)
-                    self.api.update_status(tweet, in_reply_to_status_id = tweet1, auto_populate_reply_metadata = True)
-                else:
-                    try:
-                        tweet = self.api.update_status(status = text, attachment_url = link)
-                        try:
-                            self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet.id))
-                        except Exception as x:
-                            print(x)
-                            pass
-                    except Exception as x:
-                        print(x)
-                        pass
-        else:
-            self.send_error(sender_id = sender_id, x = 'ERROR: Wrong Attachment')
 
     def fit_text(self, text = None, max_width = 0, font = None):
         lines = list()
+        product = list()
         if font.getsize(text)[0]  <= max_width:
-            lines.append(text)
+            product.append(text)
         else:
-            words = text.split(' ')
+            paragraph = list()
+            paragraph = text.splitlines()
+            if '' in paragraph:
+                paragraph.remove('')
+            for x in range(len(paragraph)):
+                lines.append(paragraph[x].split(' '))
             i = 0
-            while i < len(words):
+            e = 0
+            while i < len(paragraph):
                 line = ''
-                while i < len(words) and font.getsize(line + words[i])[0] <= max_width:
-                    line = line + words[i]+ " "
-                    i += 1
+                while e < len(lines[i]) and font.getsize(line + lines[i][e])[0] <= max_width:
+                    line = line + lines[i][e]+ " "
+                    e += 1
                 if not line:
-                    line = words[i]
-                    i += 1
-                lines.append(line)
-        return lines
+                    line = lines[i][e]
+                    e += 1
+                if e == len(lines[i]):
+                    e = 0
+                    i +=1
+                product.append(line)
+        return product
     
     def upload_font_pic(self, text = None):
-        y = 0
-        filename = "temp.jpg"
+        x_offset = 40
+        filename = 'temp.jpg'
         img = Image.new('RGB',(900,900),'white')
-        font = ImageFont.truetype('Heebo-ExtraBold.ttf',round(75/(1+(len(text)*0.01)**(1/2))))
-        print(round(75/(1+(len(text)*0.01)**(1/2))))
-        w,h = font.getsize(text)
+        font = ImageFont.truetype('arial.ttf',round(150/(1+(len(text)*0.01)**(1/2))))
+        h = font.getsize(text)[1]
         draw = ImageDraw.Draw(img)
-        lines = self.fit_text(text = text, max_width=900, font = font)
+        lines = self.fit_text(text = text, max_width=900 - x_offset, font = font)
+        y = 900/2 - len(lines)*h/2
         for line in lines:
-            draw.text((0,y), line, fill="black", font=font)
+            draw.text((x_offset,y), line, fill="black", font=font)
             y = y + h
         img = img.save(filename)
         media_ids = self.api.media_upload(filename).media_id

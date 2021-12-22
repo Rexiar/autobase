@@ -4,13 +4,12 @@ import os
 import hashlib
 import base64
 import re
-
+import config
 import requests
 
 from typing import NoReturn
 from abc import ABC, abstractmethod
 
-from tweepy.errors import TweepError
 from tweepy import OAuthHandler
 from flask import Flask, request
 
@@ -21,10 +20,10 @@ class Activity:
     _version: str = "1.1"
     _product: str = "account_activity"
     _auth: OAuthHandler = OAuthHandler(
-        os.environ["consumer_key"], os.environ["consumer_secret"]
+        config.consumer_key, config.consumer_secret
     )
     _auth.set_access_token(
-        os.environ["access_token"], os.environ["access_token_secret"]
+        config.access_token, config.access_token_secret
     )
 
     def api(self, method: str, endpoint: str, data: dict = None) -> json:
@@ -51,14 +50,15 @@ class Activity:
                     data=data,
                 )
                 return response
-        except TweepError:
-            raise
+        except Exception as x:
+            print(x)
+            pass
 
-    def register_webhook(self, callback_url: str) -> json:
+    def register_webhook(self, callback_url: str):
         try:
             return self.api(
                 method="POST",
-                endpoint=f"all/{os.environ['env_name']}/webhooks.json",
+                endpoint=f"all/development/webhooks.json",
                 data={"url": callback_url},
             ).json()
         except Exception as e:
@@ -70,7 +70,7 @@ class Activity:
         try:
             return self.api(
                 method="PUT",
-                endpoint=f"all/{os.environ['env_name']}/webhooks/{webhook_id}.json",
+                endpoint=f"all/development/webhooks/{webhook_id}.json",
             )
         except Exception as e:
             raise e
@@ -81,7 +81,7 @@ class Activity:
         try:
             return self.api(
                 method="DELETE",
-                endpoint=f"all/{os.environ['env_name']}/webhooks/{webhook_id}.json",
+                endpoint=f"all/development/webhooks/{webhook_id}.json",
             )
         except Exception as e:
             raise e
@@ -90,7 +90,7 @@ class Activity:
         try:
             return self.api(
                 method="POST",
-                endpoint=f"all/{os.environ['env_name']}/subscriptions.json",
+                endpoint=f"all/development/subscriptions.json",
             )
         except Exception:
             raise
@@ -134,7 +134,7 @@ class Event(ABC):
                 try:
                     if request.method == "GET" or request.method == "PUT":
                         hash_digest = hmac.digest(
-                            key=os.environ["consumer_secret"].encode("utf-8"),
+                            key=config.consumer_secret.encode("utf-8"),
                             msg=request.args.get("crc_token").encode("utf-8"),
                             digest=hashlib.sha256,
                         )
