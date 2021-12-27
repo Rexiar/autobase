@@ -142,7 +142,7 @@ class bot:
         ptnmenfess = Image.open('ptnmenfess.png').convert('RGBA')
         img = Image.new('RGB',(900,900),'white')
         font_size = round(150/(1+(len(text)*0.01)**(1/2)))
-        font = ImageFont.truetype('arial.ttf',font_size)
+        font = ImageFont.truetype('Lato-Bold.ttf',font_size)
         w, h = font.getsize(text)
         draw = ImageDraw.Draw(img)
         lines = self.fit_text(text = text, max_width=900 - x_offset, font = font)
