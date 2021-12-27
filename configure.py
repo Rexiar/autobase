@@ -1,11 +1,10 @@
 from twitivity import Activity
-import json
-
+import config
 if __name__ == "__main__":
     activity = Activity()
     print(
         activity.register_webhook(
-            callback_url="https://02cd-36-72-218-251.ngrok.io/twitter/callback"
+            callback_url=config.callback+"/twitter/callback"
         )
     )
     print(activity.subscribe())

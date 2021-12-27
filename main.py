@@ -1,29 +1,169 @@
 from time import time
 from bot import bot
-import time
-import config
+from twitivity import Event
+from tinydb import TinyDB, Query
+import time, config, json, re
 
-def run():
-    dmslist= list()
-    while True:
-        dmslist = bot.read_dm()
-        if (len(dmslist) != 0):
-            print('*')
-            for x in range(len(dmslist)):
-                if dmslist[x]['type'] == "tweet2pic":
-                    dmslist[x]['message'] = dmslist[x]['message'].replace(config.trigger_text_to_pic, "")
-                    bot.post_font_pic(text = dmslist[x]['message'], sender_id=dmslist[x]['sender_id'])
+class StreamEvent(Event):
+    CALLBACK_URL: str = config.callback+"/twitter/callback"
+    def on_data(self, data: json) -> None:
+        if "direct_message_events" in data.keys():
+            to_post = TinyDB('to_post.json')
+            message = data['direct_message_events'][0]['message_create']['message_data']['text']
+            sender_id = data['direct_message_events'][0]['message_create']['sender_id']
+            link = None
+            media_url = None
+            _type = None
+            if config.trigger in message.lower():
+                if len(message) >= 16:
+                    if 'attachment' in data['direct_message_events'][0]['message_create']['message_data']:
+                        if data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'photo':
+                            _type="photo"
+                            media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
+                        elif data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'animated_gif':
+                            _type="gif"
+                            media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
+                        elif data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'video':
+                            _type="video"
+                            media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
+                    elif len(data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'])>0:
+                        #this is hare other tweets
+                        if data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url'][8] == 't' and data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url'][8] == 'w':
+                            _type="link"
+                            link = data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url']
+                        else:
+                            #link other than to twitter
+                            _type="linkout"
+                    else:
+                        _type = "text"
+                    to_post.insert({"index":(to_post.__len__()),"user_id":sender_id,"message" : message, "link":link, "media_url":media_url, "type": _type})
+                    process(sender_id)
                 else:
-                    bot.post_tweet(text = dmslist[x]['message'], sender_id=dmslist[x]['sender_id'], link = dmslist[x]['link'], media_url=dmslist[x]['media_url'], type = dmslist[x]['type'])
-                time.sleep(5)
-            for x in range(len(dmslist)):
-                bot.delete_DM(dmslist[x]['id'])
+                    bot.send_error(sender_id = sender_id, x = "konten yang ingin dikirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
+            elif config.trigger_text_to_pic in message.lower():
+                if len(message) >= 16:
+                    if len(message) < 1230:
+                        to_post.insert({"index":(to_post.__len__()),"user_id":sender_id,"message" : message, "link":link, "media_url":media_url, "type": "tweet2pic"})
+                        process(sender_id)
+                    else:
+                        bot.send_error(sender_id = sender_id, x = "konten yang ingin dikirimkan mengandung terlalu banyak huruf")
+                else:
+                    bot.send_error(sender_id = sender_id, x = "konten yang ingin dikirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
+            elif config.trigger_delete in message.lower() and len(message) <=16:
+                delete_tweet(sender_id=sender_id,timestamp=data['direct_message_events'][0]['created_timestamp'])
+            to_post.close()
+        elif "tweet_create_events" in data.keys():
+            if config.trigger_report in data['tweet_create_events'][0]['text']:
+                bot.send_report(tweet_id=data['tweet_create_events'][0]['in_reply_to_status_id_str'], recipient_id=config.report_recipient)
+
+def process(sender_id: int):
+    round_old = TinyDB('round_old.json')
+    hour, min = map(int, time.strftime("%H %M").split())
+    round_num = {"hour" : hour, "min" : min-(min%5)}
+    round_up = []
+    if hour==23 and min>=55:
+        round_up = {"hour":00,"min":00}
+    elif min>=55:
+        round_up = {"hour":hour+1,"min":00}
+    else:
+        round_up = {"hour" : hour, "min" : min-(min%5)+5}
+    if round_old.get(User.index==0).get('min')< round_num['min'] or round_old.get(User.index==0).get('hour') < round_num['hour']:
+        round_old.update({"min":min}, User.index == 0)
+        round_old.update({"hour":hour}, User.index == 0)
+        with open("count.txt","w") as x:
+            x.truncate()
+    if sum(1 for line in open('count.txt')) <8:
+        post = True
+    else:
+        post = False
+    if post == False:
+        to_post = TinyDB('to_post.json')
+        to_post.truncate()
+        bot.send_error(sender_id = sender_id, x = ("batas tweet kami telah tercapai. Mohon coba lagi pada jam "+ str(round_up["hour"])+":"+str(round_up["min"])))
+        to_post.close()
+    else:
+        run()
+    round_old.close()
+    
+def run():
+    to_post = TinyDB('to_post.json')
+    tweets = list()
+    message_list = list()
+    to_post_len = to_post.__len__()
+    if to_post_len>0:
+        for x in range(to_post.__len__()):
+            message_list.append(to_post.get(User.index == 0).get('message'))
+            if to_post.get(User.index == 0).get('type') == "tweet2pic":
+                to_post.update({'message': to_post.get(User.index == 0).get('message').replace(config.trigger_text_to_pic, "")}, User.index==0)
+                tweet = bot.post_font_pic(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'))
+                tweets.append(tweet)
+            else:
+                tweet = bot.post_tweet(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'), link = to_post.get(User.index == 0).get('link'), media_url=to_post.get(User.index == 0).get('media_url'), type = to_post.get(User.index == 0).get('type'))
+                tweets.append(tweet)
+            to_post.remove(User.index==0)
+            for y in range(to_post.__len__()):
+                to_post.update({'index': y}, User.index == y+1)
+        print('DONE')
+    to_post.close()
+    day, hour, min = map(int, time.strftime("%d %H %M").split())
+    if len(tweets)>0:
+        db = TinyDB('database.json')
+        for x in range(to_post_len):
+            try:
+                db.insert({"user_id":tweets[x]['user']['id'], "message" : message_list[x], "day":day, "hour":hour, "minute":min, "tweet_id":tweet['id']})
+            except Exception as x:
+                print(x)
+        db.close()
+
+def delete_tweet(sender_id:int, timestamp:int):
+    sender_dm = None
+    User = Query()
+    dms = None
+    dms = bot.get_dms()
+    for x in range(len(dms['events'])):
+        user_id = dms['events'][x]['message_create']['sender_id']
+        if int(sender_id) == int(user_id):
+            if config.trigger in dms['events'][x]['message_create']['message_data']['text'].lower():
+                sender_dm = dms['events'][x]
+                break
+            elif config.trigger_text_to_pic in dms['events'][x]['message_create']['message_data']['text'].lower():
+                sender_dm = dms['events'][x]
+                break
+    if len(sender_dm)>0:
+        print(dms)
+        print("*")
+        db = TinyDB('database.json')
+        print(db.all())
+        print("*")
+        print(sender_dm)
+        if (int(timestamp) < int(sender_dm['created_timestamp'])+600000) and (int(timestamp) > int(sender_dm['created_timestamp'])+180000):
+            delete = True
         else:
-            time.sleep(60)
-            
+            delete = False
+        if delete:
+            if len(sender_dm)>0:
+                tweet_id = db.get(User.message == sender_dm['message_create']['message_data']['text']).get('tweet_id')
+                try:
+                    bot.delete_tweet(tweet_id, sender_id = user_id)
+                except Exception as x:
+                    bot.send_error(sender_id=user_id,x=x)
+                    pass
+            db.close()
+        else:
+            bot.send_DM(message="Maaf, Anda tidak dapat menghapus tweet ini sekarang.", user_id = user_id)
+
+def init():
+    round_old = TinyDB('round_old.json')
+    round_old.truncate()
+    round_old.insert({"index":0, "min":0, "hour" : 0})
+    round_old.close()
+    to_post = TinyDB('to_post.json')
+    to_post.truncate()
+    to_post.close()
+
 if __name__ == "__main__":
     bot = bot()
-    run()
-
-
-                    
+    stream_event = StreamEvent()
+    User = Query()
+    init()
+    stream_event.listen()

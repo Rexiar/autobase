@@ -9,7 +9,6 @@ import requests
 
 from typing import NoReturn
 from abc import ABC, abstractmethod
-
 from tweepy import OAuthHandler
 from flask import Flask, request
 
@@ -54,11 +53,11 @@ class Activity:
             print(x)
             pass
 
-    def register_webhook(self, callback_url: str):
+    def register_webhook(self, callback_url: str) -> json:
         try:
             return self.api(
                 method="POST",
-                endpoint=f"all/development/webhooks.json",
+                endpoint=f"all/{config.env_name}/webhooks.json",
                 data={"url": callback_url},
             ).json()
         except Exception as e:
@@ -70,7 +69,7 @@ class Activity:
         try:
             return self.api(
                 method="PUT",
-                endpoint=f"all/development/webhooks/{webhook_id}.json",
+                endpoint=f"all/{config.env_name}/webhooks/{webhook_id}.json",
             )
         except Exception as e:
             raise e
@@ -81,7 +80,7 @@ class Activity:
         try:
             return self.api(
                 method="DELETE",
-                endpoint=f"all/development/webhooks/{webhook_id}.json",
+                endpoint=f"all/{config.env_name}/webhooks/{webhook_id}.json",
             )
         except Exception as e:
             raise e
@@ -90,7 +89,7 @@ class Activity:
         try:
             return self.api(
                 method="POST",
-                endpoint=f"all/development/subscriptions.json",
+                endpoint=f"all/{config.env_name}/subscriptions.json",
             )
         except Exception:
             raise
@@ -147,9 +146,10 @@ class Event(ABC):
                         self.on_data(data)
                         return {"code": 200}
 
-                except Exception as x:
-                    print(x)
-                    pass
+                except KeyError:
+                    raise Exception("CRC_TOKEN NOT FOUND")
+                except ValueError:
+                    raise
 
             return app
         except Exception as e:
