@@ -17,7 +17,7 @@ logging.basicConfig(
 app = flask.Flask(__name__)
 
 consumer_secret = config.consumer_secret
-
+port = int(os.getenv('PORT'))
 
 @app.route("/webhook/twitter", methods=["GET", "POST"])
 def callback() -> json:
