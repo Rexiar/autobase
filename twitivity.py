@@ -110,7 +110,7 @@ def url_params(url: str) -> str:
 
 
 class Event(ABC):
-    CALLBACK_URL: str = None
+    CALLBACK_URL: str = config.callback+"/webhook/twitter"
 
     def __init__(self):
         self._server = self._get_server()

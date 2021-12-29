@@ -17,7 +17,7 @@ def subscribe():
     activity = Activity()
     print(
         activity.register_webhook(
-            callback_url=config.callback+"/twitter/callback"
+            callback_url=config.callback+"/webhook/twitter"
         )
     )
     print(activity.subscribe())
