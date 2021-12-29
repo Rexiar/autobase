@@ -157,12 +157,7 @@ def delete_tweet(sender_id:int, timestamp:int):
                 sender_dm = dms['events'][x]
                 break
     if len(sender_dm)>0:
-        print(dms)
-        print("*")
         db = TinyDB('database.json')
-        print(db.all())
-        print("*")
-        print(sender_dm)
         if (int(timestamp) < int(sender_dm['created_timestamp'])+600000) and (int(timestamp) > int(sender_dm['created_timestamp'])+180000):
             delete = True
         else:
