@@ -1,1 +1,1 @@
-web: python twitivity.py
+web: gunicorn main:app --log-file=-

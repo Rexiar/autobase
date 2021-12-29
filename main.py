@@ -2,11 +2,37 @@ from time import time
 from bot import bot
 from twitivity import Event
 from tinydb import TinyDB, Query
-import time, config, json, re
+import time, config, json, flask, json, hmac, hashlib, base64, logging,config, os
 
-class StreamEvent(Event):
-    CALLBACK_URL: str = config.callback+"/twitter/callback"
-    def on_data(self, data: json) -> None:
+logging.basicConfig(
+    filename="app.log",
+    filemode="w",
+    level=logging.INFO,
+)
+
+app = flask.Flask(__name__)
+
+consumer_secret = config.consumer_secret
+
+@app.route('/')
+def default_route():
+    return flask.send_from_directory('www', 'index.html')  
+
+@app.route("/webhook/twitter", methods=["GET", "POST"])
+def callback() -> json:
+    if flask.request.method == "GET" or flask.request.method == "PUT":
+        hash_digest = hmac.digest(
+            key=config.consumer_secret.encode("utf-8"),
+            msg=flask.request.args.get("crc_token").encode("utf-8"),
+            digest=hashlib.sha256,
+        )
+        return {
+            "response_token": "sha256="
+            + base64.b64encode(hash_digest).decode("ascii")
+        }
+    elif flask.request.method == "POST":
+        data = flask.request.get_json()
+        logging.info(data)
         if "direct_message_events" in data.keys():
             to_post = TinyDB('to_post.json')
             message = data['direct_message_events'][0]['message_create']['message_data']['text']
@@ -55,6 +81,7 @@ class StreamEvent(Event):
         elif "tweet_create_events" in data.keys():
             if config.trigger_report in data['tweet_create_events'][0]['text']:
                 bot.send_report(tweet_id=data['tweet_create_events'][0]['in_reply_to_status_id_str'], recipient_id=config.report_recipient)
+        return {"code": 200}
 
 def process(sender_id: int):
     round_old = TinyDB('round_old.json')
@@ -163,7 +190,7 @@ def init():
 
 if __name__ == "__main__":
     bot = bot()
-    stream_event = StreamEvent()
     User = Query()
     init()
-    stream_event.listen()
+    port = int(os.environ.get('PORT', 51155))
+    app.run(host="0.0.0.0", port=port)
