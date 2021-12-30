@@ -176,7 +176,7 @@ def delete_tweet(sender_id:int, timestamp:int):
                     pass
             db.close()
         else:
-            bot.send_DM(message="[BOT] Maaf, Anda tidak dapat menghapus tweet ini saat.", user_id = user_id)
+            bot.send_DM(message="[BOT] Maaf, Anda tidak dapat menghapus tweet ini saat ini.", user_id = user_id)
 
 def init():
     round_old = TinyDB('round_old.json')
