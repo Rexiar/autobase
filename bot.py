@@ -12,7 +12,6 @@ class bot:
         self.trigger2 = config.trigger_text_to_pic
 
     def get_dms(self):
-        print("im here")
         dms = self.api.get_direct_messages()
         return dms
 
@@ -54,7 +53,7 @@ class bot:
                         with open("count.txt","a") as x:
                             x.write("a\n")
                         try:
-                            self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1))
+                            self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Menfess berhasil di-tweet! ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1) + " \nAnda dapat menghapus menfess ini dengan menggunakan trigger !hapus antara 3-10 menit setelah menfess ini telah di-tweet.")
                             pass
                         except Exception as x:
                             print(x)
@@ -85,7 +84,7 @@ class bot:
                 with open("count.txt","a") as x:
                     x.write("a\n")
                 try:
-                    self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet['id']))
+                    self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Menfess berhasil di-tweet! ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet['id']) + " \nAnda dapat menghapus menfess ini dengan menggunakan trigger !hapus antara 3-10 menit setelah menfess ini telah di-tweet.")
                     pass
                 except Exception as x:
                     print(x)
@@ -167,7 +166,7 @@ class bot:
                 x.write("a\n")
             tweet1 = tweet['id']
             try:
-                self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Tweet berhasil dipublikasikan ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1))
+                self.api.send_direct_message(recipient_id=sender_id, text='[BOT] Menfess berhasil di-tweet! ' + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1) + " \nAnda dapat menghapus menfess ini dengan menggunakan trigger !hapus antara 3-10 menit setelah menfess ini telah di-tweet.")
             except Exception as x:
                 print(x)
                 pass
@@ -186,7 +185,7 @@ class bot:
     def delete_tweet(self, tweet_id:int = None, sender_id:int=None):
         try:
             self.api.destroy_status(tweet_id)
-            self.send_DM(user_id=sender_id, message="Tweet anda berhasil dihapus!")
+            self.send_DM(user_id=sender_id, message="[BOT] Tweet anda berhasil dihapus!")
         except Exception as x:
             self.send_error(user_id=sender_id, message="ada sebuah kesalahan. Coba tunggu lagi beberapa menit")
 
