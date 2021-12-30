@@ -164,9 +164,13 @@ def delete_tweet(sender_id:int, timestamp:int):
         if delete:
             db = TinyDB('database.json')
             if len(sender_dm)>0:
-                tweet_id = db.get(User.message == sender_dm['message_create']['message_data']['text']).get('tweet_id')
                 try:
-                    bot.delete_tweet(tweet_id, sender_id = user_id)
+                    tweet_id = db.get(User.message == sender_dm['message_create']['message_data']['text']).get('tweet_id')
+                    try:
+                        bot.delete_tweet(tweet_id, sender_id = user_id)
+                    except Exception as x:
+                        bot.send_error(sender_id=user_id,x=x)
+                        pass
                 except Exception as x:
                     bot.send_error(sender_id=user_id,x=x)
                     pass
