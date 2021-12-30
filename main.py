@@ -157,12 +157,12 @@ def delete_tweet(sender_id:int, timestamp:int):
                 sender_dm = dms['events'][x]
                 break
     if len(sender_dm)>0:
-        db = TinyDB('database.json')
-        if (int(timestamp) < int(sender_dm['created_timestamp'])+600000) and (int(timestamp) > int(sender_dm['created_timestamp'])+180000):
+        if (int(timestamp) < int(sender_dm['created_timestamp'])+900000) and (int(timestamp) > int(sender_dm['created_timestamp'])+180000):
             delete = True
         else:
             delete = False
         if delete:
+            db = TinyDB('database.json')
             if len(sender_dm)>0:
                 tweet_id = db.get(User.message == sender_dm['message_create']['message_data']['text']).get('tweet_id')
                 try:
@@ -172,7 +172,7 @@ def delete_tweet(sender_id:int, timestamp:int):
                     pass
             db.close()
         else:
-            bot.send_DM(message="Maaf, Anda tidak dapat menghapus tweet ini sekarang.", user_id = user_id)
+            bot.send_DM(message="[BOT] Maaf, Anda tidak dapat menghapus tweet ini saat.", user_id = user_id)
 
 def init():
     round_old = TinyDB('round_old.json')
