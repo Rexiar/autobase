@@ -118,11 +118,14 @@ class bot:
             if '' in paragraph:
                 paragraph.remove('')
             print(paragraph)
+            clean_paragraph = 0
             for x in range(len(paragraph)):
-                lines.append(paragraph[x].split(' '))
+                if (paragraph[x]!=""):
+                    lines.append(paragraph[x].split(' '))
+                    clean_paragraph+=1
             i = 0
             e = 0
-            while i < len(paragraph):
+            while i < clean_paragraph:
                 line = ''
                 while e < len(lines[i]) and font.getsize(line + lines[i][e])[0] <= max_width:
                     line = line + lines[i][e]+ " "
