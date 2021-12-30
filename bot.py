@@ -117,6 +117,8 @@ class bot:
             paragraph = text.splitlines()
             if '' in paragraph:
                 paragraph.remove('')
+            elif '\n' in paragraph:
+                paragraph.remove('\n')
             for x in range(len(paragraph)):
                 lines.append(paragraph[x].split(' '))
             i = 0
