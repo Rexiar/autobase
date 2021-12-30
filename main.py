@@ -121,7 +121,7 @@ def run():
         for x in range(to_post.__len__()):
             message_list.append(to_post.get(User.index == 0).get('message'))
             if to_post.get(User.index == 0).get('type') == "tweet2pic":
-                to_post.update({'message': to_post.get(User.index == 0).get('message').lower().replace(config.trigger_text_to_pic, "")}, User.index==0)
+                to_post.update({'message': to_post.get(User.index == 0).get('message').replace(config.trigger_text_to_pic, "")}, User.index==0)
                 tweet = bot.post_font_pic(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'))
                 tweets.append(tweet)
             else:
