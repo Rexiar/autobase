@@ -185,7 +185,7 @@ class bot:
     def delete_tweet(self, tweet_id:int = None, sender_id:int=None):
         try:
             self.api.destroy_status(tweet_id)
-            self.send_DM(user_id=sender_id, message="[BOT] Tweet anda berhasil dihapus!")
+            self.send_DM(user_id=sender_id, message="[BOT] Menfess anda berhasil dihapus!")
         except Exception as x:
             self.send_error(user_id=sender_id, message="ada sebuah kesalahan. Coba tunggu lagi beberapa menit")
 

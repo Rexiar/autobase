@@ -65,16 +65,16 @@ def callback() -> json:
                     to_post.insert({"index":(to_post.__len__()),"user_id":sender_id,"message" : message, "link":link, "media_url":media_url, "type": _type})
                     process(sender_id)
                 else:
-                    bot.send_error(sender_id = sender_id, x = "pesan yang Anda ingin kirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
+                    bot.send_error(sender_id = sender_id, x = "menfess yang Anda ingin kirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
             elif config.trigger_text_to_pic in message.lower():
                 if len(message) >= 16:
                     if len(message) < 1230:
                         to_post.insert({"index":(to_post.__len__()),"user_id":sender_id,"message" : message, "link":link, "media_url":media_url, "type": "tweet2pic"})
                         process(sender_id)
                     else:
-                        bot.send_error(sender_id = sender_id, x = "pesan yang Anda ingin dikirimkan mengandung terlalu banyak huruf")
+                        bot.send_error(sender_id = sender_id, x = "menfess yang Anda ingin dikirimkan mengandung terlalu banyak huruf")
                 else:
-                    bot.send_error(sender_id = sender_id, x = "pesan yang Anda ingin dikirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
+                    bot.send_error(sender_id = sender_id, x = "menfess yang Anda ingin dikirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
             elif config.trigger_delete in message.lower() and len(message) <=16:
                 delete_tweet(sender_id=sender_id,timestamp=data['direct_message_events'][0]['created_timestamp'])
             to_post.close()
