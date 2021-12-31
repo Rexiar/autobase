@@ -47,10 +47,12 @@ def callback() -> json:
                             _type="photo"
                             media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
                         elif data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'animated_gif':
-                            _type="gif"
+                            #need fix
+                            _type="photo"
                             media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
                         elif data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'video':
-                            _type="video"
+                            #need fix
+                            _type="photo"
                             media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
                     elif len(data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'])>0:
                         #this is hare other tweets
