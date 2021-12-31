@@ -149,7 +149,7 @@ class bot:
         w, h = font.getsize(text)
         draw = ImageDraw.Draw(img)
         lines = self.fit_text(text = text, max_width=900 - x_offset, font = font)
-        ptnmenfess.thumbnail((w,h))
+        ptnmenfess.thumbnail((round(w/2),round(h/2)))
         ptn_w, ptn_h = ptnmenfess.size
         img.paste(ptnmenfess, (875-round(ptn_w), 875-round(ptn_h)), ptnmenfess)
         y = 900/2 - len(lines)*h/2
