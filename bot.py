@@ -165,7 +165,7 @@ class bot:
         media_id = self.upload_font_pic(text=text)
         media_ids.append(media_id)
         try:
-            tweet = self.api.update_status(status= config.trigger , media_ids = media_ids)
+            tweet = self.api.update_status(status= config.trigger_text_to_pic , media_ids = media_ids)
             with open("count.txt","a") as x:
                 x.write("a\n")
             tweet1 = tweet['id']
