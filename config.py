@@ -9,6 +9,6 @@ trigger = '!ptn'
 username = 'ptnmenfess'
 trigger_text_to_pic = '!gambar'
 trigger_report = '!lapor'
-report_recipient = 1295196286660915200
+report_recipient = 1416409954425053187
 base_id=1267436526046044160
 trigger_delete = "!hapus"
