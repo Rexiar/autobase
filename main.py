@@ -149,15 +149,19 @@ def run():
 def delete_tweet(sender_id:int, timestamp:int):
     User = Query()
     db = TinyDB('database.json')
-    if (db.search(User.user_id==sender_id)[-1].get('timestamp')+900000 > int(timestamp)):
-        try:
-            bot.delete_tweet(db.search(User.user_id==sender_id)[-1].get('tweet_id'), sender_id = sender_id)
-            db.remove(User.tweet_id==db.search(User.user_id==sender_id)[-1].get('tweet_id'))
-        except Exception as x:
-            bot.send_error(sender_id=sender_id,x=x)
-            pass
-    else:
-        bot.send_DM(message="[BOT] Maaf, Anda tidak dapat menghapus menfess Anda saat ini.", user_id = sender_id)
+    try:
+        db.search(User.user_id==sender_id)
+        if (db.search(User.user_id==sender_id)[-1].get('timestamp')+900000 > int(timestamp)):
+            try:
+                bot.delete_tweet(db.search(User.user_id==sender_id)[-1].get('tweet_id'), sender_id = sender_id)
+                db.remove(User.tweet_id==db.search(User.user_id==sender_id)[-1].get('tweet_id'))
+            except Exception as x:
+                bot.send_error(sender_id=sender_id,x=x)
+                pass
+        else:
+            bot.send_DM(message="[BOT] Maaf, Anda tidak dapat menghapus menfess Anda saat ini.", user_id = sender_id)
+    except Exception as x:
+        bot.send_error(sender_id = sender_id, x = "Anda belum pernah mengirimkan menfess sebelumnya.")
     db.close()
 
 def init():
