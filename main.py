@@ -116,7 +116,8 @@ def process(sender_id: int):
     
 def run():
     to_post = TinyDB('to_post.json')
-    tweets = list()
+    tweet_sender_id = list()
+    tweet_ids= list()
     message_list = list()
     to_post_len = to_post.__len__()
     if to_post_len>0:
@@ -125,60 +126,43 @@ def run():
             if to_post.get(User.index == 0).get('type') == "tweet2pic":
                 to_post.update({'message': to_post.get(User.index == 0).get('message').replace(config.trigger_text_to_pic, "")}, User.index==0)
                 tweet = bot.post_font_pic(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'))
-                tweets.append(tweet)
+                tweet_sender_id.append(to_post.get(User.index == 0).get('user_id'))
+                tweet_ids.append(tweet['id'])
             else:
                 tweet = bot.post_tweet(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'), link = to_post.get(User.index == 0).get('link'), media_url=to_post.get(User.index == 0).get('media_url'), type = to_post.get(User.index == 0).get('type'))
-                tweets.append(tweet)
+                tweet_sender_id.append(to_post.get(User.index == 0).get('user_id'))
+                tweet_ids.append(tweet['id'])
             to_post.remove(User.index==0)
             for y in range(to_post.__len__()):
                 to_post.update({'index': y}, User.index == y+1)
         print('DONE')
     to_post.close()
-    day, hour, min = map(int, time.strftime("%d %H %M").split())
-    if len(tweets)>0:
+    if len(tweet_sender_id)>0:
         db = TinyDB('database.json')
         for x in range(to_post_len):
             try:
-                db.insert({"user_id":tweets[x]['user']['id'], "message" : message_list[x], "day":day, "hour":hour, "minute":min, "tweet_id":tweet['id']})
+                db.insert({"user_id":tweet_sender_id[x], "message" : message_list[x], "timestamp":round(time.time()*1000), "tweet_id":tweet_ids[x]})
             except Exception as x:
                 print(x)
         db.close()
 
 def delete_tweet(sender_id:int, timestamp:int):
-    sender_dm = None
     User = Query()
-    dms = None
-    dms = bot.get_dms()
-    for x in range(len(dms['events'])):
-        user_id = dms['events'][x]['message_create']['sender_id']
-        if int(sender_id) == int(user_id):
-            if config.trigger in dms['events'][x]['message_create']['message_data']['text'].lower():
-                sender_dm = dms['events'][x]
-                break
-            elif config.trigger_text_to_pic in dms['events'][x]['message_create']['message_data']['text'].lower():
-                sender_dm = dms['events'][x]
-                break
-    if len(sender_dm)>0:
-        if (int(timestamp) < int(sender_dm['created_timestamp'])+900000) and (int(timestamp) > int(sender_dm['created_timestamp'])+180000):
-            delete = True
+    db = TinyDB('database.json')
+    try:
+        db.search(User.user_id==sender_id)
+        if (db.search(User.user_id==sender_id)[-1].get('timestamp')+900000 > int(timestamp)):
+            try:
+                bot.delete_tweet(db.search(User.user_id==sender_id)[-1].get('tweet_id'), sender_id = sender_id)
+                db.remove(User.tweet_id==db.search(User.user_id==sender_id)[-1].get('tweet_id'))
+            except Exception as x:
+                bot.send_error(sender_id=sender_id,x=x)
+                pass
         else:
-            delete = False
-        if delete:
-            db = TinyDB('database.json')
-            if len(sender_dm)>0:
-                try:
-                    tweet_id = db.get(User.message == sender_dm['message_create']['message_data']['text']).get('tweet_id')
-                    try:
-                        bot.delete_tweet(tweet_id, sender_id = user_id)
-                    except Exception as x:
-                        bot.send_error(sender_id=user_id,x=x)
-                        pass
-                except Exception as x:
-                    bot.send_error(sender_id=user_id,x=x)
-                    pass
-            db.close()
-        else:
-            bot.send_DM(message="[BOT] Maaf, Anda tidak dapat menghapus menfess Anda saat ini.", user_id = user_id)
+            bot.send_DM(message="[BOT] Maaf, Anda tidak dapat menghapus menfess Anda saat ini.", user_id = sender_id)
+    except Exception as x:
+        bot.send_error(sender_id = sender_id, x = "Anda belum pernah mengirimkan menfess sebelumnya.")
+    db.close()
 
 def init():
     round_old = TinyDB('round_old.json')
