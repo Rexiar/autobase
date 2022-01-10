@@ -49,7 +49,6 @@ class bot:
                 if tweet1 == 0:
                     try:
                         tweet = self.api.update_status(tweet, media_ids = media_ids, attachment_url = link)
-                        first_tweet = tweet
                         tweet1 = tweet['id']
                         with open("count.txt","a") as x:
                             x.write("a\n")
@@ -78,7 +77,7 @@ class bot:
                 text = text[last-len(split[-1]):very_last]
                 tweet = text[first:last-len(split[-1])]
             self.api.update_status(tweet, in_reply_to_status_id = tweet1, auto_populate_reply_metadata = True)
-            return first_tweet
+            return tweet
         else:
             try:
                 tweet = self.api.update_status(status=text, media_ids = media_ids, attachment_url = link)
@@ -171,7 +170,7 @@ class bot:
                 x.write("a\n")
             tweet1 = tweet['id']
             try:
-                self.api.send_direct_message(recipient_id=sender_id, text="[BOT] Menfess berhasil di-tweet!\n- - - - -\nAnda dapat menghapus menfess ini dengan menggunakan trigger !hapus hanya sampai 15 menit setelah menfess ini telah di-tweet. " + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1))
+                self.api.send_direct_message(recipient_id=sender_id, text="[BOT] Menfess berhasil di-tweet!\n- - - - -\nAnda dapat menghapus menfess ini dengan menggunakan trigger !hapus antara 3-15 menit setelah menfess ini telah di-tweet. " + 'https://twitter.com/'+ config.username +'/status/' + str(tweet1))
             except Exception as x:
                 print(x)
                 pass
