@@ -122,16 +122,18 @@ def run():
     to_post_len = to_post.__len__()
     if to_post_len>0:
         for x in range(to_post.__len__()):
-            message_list.append(to_post.get(User.index == 0).get('message'))
             if to_post.get(User.index == 0).get('type') == "tweet2pic":
                 to_post.update({'message': to_post.get(User.index == 0).get('message').replace(config.trigger_text_to_pic, "")}, User.index==0)
                 tweet = bot.post_font_pic(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'))
-                tweet_sender_id.append(to_post.get(User.index == 0).get('user_id'))
-                tweet_ids.append(tweet['id'])
             else:
                 tweet = bot.post_tweet(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'), link = to_post.get(User.index == 0).get('link'), media_url=to_post.get(User.index == 0).get('media_url'), type = to_post.get(User.index == 0).get('type'))
-                tweet_sender_id.append(to_post.get(User.index == 0).get('user_id'))
+            try:
                 tweet_ids.append(tweet['id'])
+                tweet_sender_id.append(to_post.get(User.index == 0).get('user_id'))
+                message_list.append(to_post.get(User.index == 0).get('message'))
+            except Exception as x:
+                bot.send_DM(message="[BOT] Maaf, Menfess yang Anda coba kirimkan sudah pernah dikirimkan dalam waktu dekat, coba ubah sedikit.", user_id = to_post.get(User.index == 0).get('user_id'))
+                pass
             to_post.remove(User.index==0)
             for y in range(to_post.__len__()):
                 to_post.update({'index': y}, User.index == y+1)
