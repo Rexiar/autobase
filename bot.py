@@ -11,6 +11,15 @@ class bot:
         self.trigger = config.trigger
         self.trigger2 = config.trigger_text_to_pic
 
+    def background_check(self, sender_id = None):
+        relationship = self.api.get_friendship(source_id=config.base_id, target_id= sender_id)
+        return relationship['relationship']['source']['followed_by']
+
+    def clean_tweet(self, message = None):
+        message = re.sub("#[A-Za-z0-9_]+","", message)
+        message = re.sub("@[A-Za-z0-9_]+","", message)
+        return message
+
     def get_dms(self):
         dms = self.api.get_direct_messages()
         return dms

@@ -41,33 +41,45 @@ def callback() -> json:
             media_url = None
             _type = None
             if config.trigger in message.lower():
-                if len(message) >= 16:
-                    if 'attachment' in data['direct_message_events'][0]['message_create']['message_data']:
-                        if data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'photo':
-                            _type="photo"
-                            media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
-                        elif data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'animated_gif':
-                            #need fix
-                            _type="photo"
-                            media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
-                        elif data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'video':
-                            #need fix
-                            _type="photo"
-                            media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
-                    elif len(data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'])>0:
-                        #this is hare other tweets
-                        if data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url'][8] == 't' and data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url'][8] == 'w':
-                            _type="link"
-                            link = data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url']
+                banned_word = False
+                relationship = bot.background_check(sender_id)
+                message = bot.clean_tweet(message)
+                for x in range(len(config.banned_words)):
+                    if config.banned_words[x] in message.lower():
+                        banned_word = True
+                if relationship == True:
+                    if len(message) >= 16 and banned_word==False:
+                        if 'attachment' in data['direct_message_events'][0]['message_create']['message_data']:
+                            if data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'photo':
+                                _type="photo"
+                                media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
+                            elif data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'animated_gif':
+                                #need fix
+                                _type="photo"
+                                media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
+                            elif data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['type'] == 'video':
+                                #need fix
+                                _type="photo"
+                                media_url = data['direct_message_events'][0]['message_create']['message_data']['attachment']['media']['media_url']
+                        elif len(data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'])>0:
+                            #this is hare other tweets
+                            if data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url'][8] == 't' and data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url'][8] == 'w':
+                                _type="link"
+                                link = data['direct_message_events'][0]['message_create']['message_data']['entities']['urls'][0]['expanded_url']
+                            else:
+                                #link other than to twitter
+                                _type="linkout"
                         else:
-                            #link other than to twitter
-                            _type="linkout"
+                            _type = "text"
+                        to_post.insert({"index":(to_post.__len__()),"user_id":sender_id,"message" : message, "link":link, "media_url":media_url, "type": _type})
+                        process(sender_id)
                     else:
-                        _type = "text"
-                    to_post.insert({"index":(to_post.__len__()),"user_id":sender_id,"message" : message, "link":link, "media_url":media_url, "type": _type})
-                    process(sender_id)
+                        if banned_word == True:
+                            bot.send_error(sender_id = sender_id, x = "menfess yang Anda ingin kirimkan mengandung kata yang terlarang")
+                        else:
+                            bot.send_error(sender_id = sender_id, x = "menfess yang Anda ingin kirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
                 else:
-                    bot.send_error(sender_id = sender_id, x = "menfess yang Anda ingin kirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
+                    bot.send_DM(message="[BOT] Maaf, Anda belum follow kami.", user_id = sender_id)
             elif config.trigger_text_to_pic in message.lower():
                 if len(message) >= 16:
                     if len(message) < 1230:
