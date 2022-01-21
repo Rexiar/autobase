@@ -187,7 +187,7 @@ def run():
                 else:
                     poll_fail=True
                     try:
-                        bot.send_DM(user_id=to_post.get(User.index == 0).get('user_id'), message="[BOT] Maaf, Penulisan poll anda salah. Pertanyaan (diawali dengan trigger poll) harus di awal lalu disusul dengan pilihan-pilihan ditandai dengan tanda ?.")
+                        bot.send_DM(user_id=to_post.get(User.index == 0).get('user_id'), message="[BOT] Maaf, Penulisan poll anda salah. Pertanyaan (diawali dengan trigger poll) harus di awal lalu disusul dengan pilihan-pilihan ditandai dengan tanda /.")
                         pass
                     except Exception as x:
                         print(x)
@@ -235,10 +235,10 @@ def delete_tweet(sender_id:int, timestamp:int):
     db.close()
 
 def poll_prechecks(text:str=None):
-    product = text.split('?')
+    product = text.split('/')
     for x in product:
-        if '?' in product:
-            product[x].replace('?','')
+        if '/' in product:
+            product[x].replace('/','')
     message = product[0]
     message = bot.clean_tweet(message)
     product.pop(0)
