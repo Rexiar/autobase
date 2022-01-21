@@ -89,6 +89,14 @@ def callback() -> json:
                         bot.send_error(sender_id = sender_id, x = "menfess yang Anda ingin dikirimkan mengandung terlalu banyak huruf")
                 else:
                     bot.send_error(sender_id = sender_id, x = "menfess yang Anda ingin dikirimkan perlu mengandung minimal 16 huruf agar dapat dikirimkan")
+            elif config.trigger_poll in message.lower():
+                relationship = bot.background_check(sender_id)
+                if relationship == True:
+                    text = message.replace("\n"," ")
+                    to_post.insert({"index":(to_post.__len__()),"user_id":sender_id,"message" : text, "link":link, "media_url":media_url, "type": "poll"})
+                    process(sender_id)
+                else:
+                    bot.send_DM(message="[BOT] Maaf, Anda belum follow kami.", user_id = sender_id)
             elif config.trigger_delete in message.lower() and len(message) <=16:
                 delete_tweet(sender_id=sender_id,timestamp=data['direct_message_events'][0]['created_timestamp'])
             to_post.close()
@@ -134,18 +142,66 @@ def run():
     to_post_len = to_post.__len__()
     if to_post_len>0:
         for x in range(to_post.__len__()):
+            poll_fail = False
             if to_post.get(User.index == 0).get('type') == "tweet2pic":
                 to_post.update({'message': to_post.get(User.index == 0).get('message').replace(config.trigger_text_to_pic, "")}, User.index==0)
-                tweet = bot.post_font_pic(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'))
+                tweet_id = bot.post_font_pic(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'))['id']
+            elif to_post.get(User.index == 0).get('type') == "poll":
+                good = True
+                message, choice = poll_prechecks(to_post.get(User.index == 0).get('message'))
+                if config.trigger_poll in message:
+                    if len(message) <280:
+                        if len(choice) <=4 and len(choice) > 0:
+                            for x in range(len(choice)):
+                                if len(choice[x])>=25:
+                                    good = False
+                            if good:
+                                try:    
+                                    tweet_id = bot.post_poll(message = message, choice = choice, sender_id=to_post.get(User.index == 0).get('user_id')).data['id']
+                                except:
+                                    poll_fail=True
+                            else:
+                                poll_fail=True
+                                try:
+                                    bot.send_DM(user_id=to_post.get(User.index == 0).get('user_id'), message="[BOT] Maaf, Poll yang Anda coba kirimkan mengandung pilihan yang memiliki lebih dari 25 huruf. Coba hapus beberapa huruf untuk salah satu pilihan.")
+                                    pass
+                                except Exception as x:
+                                    print(x)
+                                    pass
+                        else:
+                            poll_fail=True
+                            try:
+                                bot.send_DM(user_id=to_post.get(User.index == 0).get('user_id'), message="[BOT] Maaf, Poll yang Anda coba kirimkan mengandung jumlah pilihan yang salah. Polls hanya dapat mengirimkan antara 1-4 pilihan.")
+                                pass
+                            except Exception as x:
+                                print(x)
+                                pass
+                    else:
+                        poll_fail=True
+                        try:
+                            bot.send_DM(user_id=to_post.get(User.index == 0).get('user_id'), message="[BOT] Maaf, Poll yang Anda coba kirimkan mengandung pertanyaan yang mengandung terlalu banyak huruf. Coba hapus beberapa huruf untuk pertanyaannya.")
+                            pass
+                        except Exception as x:
+                            print(x)
+                            pass
+                else:
+                    poll_fail=True
+                    try:
+                        bot.send_DM(user_id=to_post.get(User.index == 0).get('user_id'), message="[BOT] Maaf, Penulisan poll anda salah. Pertanyaan (diawali dengan trigger poll) harus di awal lalu disusul dengan pilihan-pilihan ditandai dengan tanda ?.")
+                        pass
+                    except Exception as x:
+                        print(x)
+                        pass
             else:
-                tweet = bot.post_tweet(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'), link = to_post.get(User.index == 0).get('link'), media_url=to_post.get(User.index == 0).get('media_url'), type = to_post.get(User.index == 0).get('type'))
-            try:
-                tweet_ids.append(tweet['id'])
-                tweet_sender_id.append(to_post.get(User.index == 0).get('user_id'))
-                message_list.append(to_post.get(User.index == 0).get('message'))
-            except Exception as x:
-                bot.send_DM(message="[BOT] Maaf, Menfess yang Anda coba kirimkan sudah pernah dikirimkan dalam waktu dekat, coba ubah sedikit.", user_id = to_post.get(User.index == 0).get('user_id'))
-                pass
+                tweet_id = bot.post_tweet(text = to_post.get(User.index == 0).get('message'), sender_id=to_post.get(User.index == 0).get('user_id'), link = to_post.get(User.index == 0).get('link'), media_url=to_post.get(User.index == 0).get('media_url'), type = to_post.get(User.index == 0).get('type'))['id']
+            if poll_fail == False:
+                try:
+                    tweet_ids.append(tweet_id)
+                    tweet_sender_id.append(to_post.get(User.index == 0).get('user_id'))
+                    message_list.append(to_post.get(User.index == 0).get('message'))
+                except Exception as x:
+                    bot.send_DM(message="[BOT] Maaf, Menfess yang Anda coba kirimkan sudah pernah dikirimkan dalam waktu dekat, coba ubah sedikit.", user_id = to_post.get(User.index == 0).get('user_id'))
+                    pass
             to_post.remove(User.index==0)
             for y in range(to_post.__len__()):
                 to_post.update({'index': y}, User.index == y+1)
@@ -168,15 +224,26 @@ def delete_tweet(sender_id:int, timestamp:int):
         if (db.search(User.user_id==sender_id)[-1].get('timestamp')+900000 > int(timestamp)):
             try:
                 bot.delete_tweet(db.search(User.user_id==sender_id)[-1].get('tweet_id'), sender_id = sender_id)
-                db.remove(User.tweet_id==db.search(User.user_id==sender_id)[-1].get('tweet_id'))
             except Exception as x:
                 bot.send_error(sender_id=sender_id,x=x)
                 pass
+            db.remove(User.tweet_id==db.search(User.user_id==sender_id)[-1].get('tweet_id'))
         else:
             bot.send_DM(message="[BOT] Maaf, Anda tidak dapat menghapus menfess Anda saat ini.", user_id = sender_id)
     except Exception as x:
         bot.send_error(sender_id = sender_id, x = "Anda belum pernah mengirimkan menfess sebelumnya.")
     db.close()
+
+def poll_prechecks(text:str=None):
+    product = text.split('?')
+    for x in product:
+        if '?' in product:
+            product[x].replace('?','')
+    message = product[0]
+    message = bot.clean_tweet(message)
+    product.pop(0)
+    choice = product
+    return message, choice
 
 def init():
     round_old = TinyDB('round_old.json')

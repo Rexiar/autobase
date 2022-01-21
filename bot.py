@@ -10,6 +10,7 @@ class bot:
         self.api = tweepy.API(self.auth, parser=tweepy.parsers.JSONParser())
         self.trigger = config.trigger
         self.trigger2 = config.trigger_text_to_pic
+        self.client = tweepy.Client(bearer_token=config.bearer_token, consumer_key= config.consumer_key, consumer_secret= config.consumer_secret, access_token= config.access_token, access_token_secret= config.access_token_secret)   
 
     def background_check(self, sender_id = None):
         relationship = self.api.get_friendship(source_id=config.base_id, target_id= sender_id)
@@ -104,6 +105,22 @@ class bot:
                 self.send_error(sender_id = sender_id, x = x)
                 pass
 
+    def post_poll(self, message = None, choice = None, sender_id = None):
+        try:
+            tweet = self.client.create_tweet(text=message, poll_duration_minutes=60, poll_options=choice)
+            with open("count.txt","a") as x:
+                x.write("a\n")
+            try:
+                self.api.send_direct_message(recipient_id=sender_id, text="[BOT] Menfess berhasil di-tweet!\n- - - - -\nAnda dapat menghapus menfess ini dengan menggunakan trigger !hapus sampai 15 menit setelah menfess ini telah di-tweet. " + 'https://twitter.com/'+ config.username +'/status/' + str(tweet.data['id']))
+                pass
+            except Exception as x:
+                print(x)
+                pass
+            return tweet
+        except Exception as x:
+            self.send_error(sender_id = sender_id, x = x)
+            pass
+
     def tweet_attachment(self, media_url = None, sender_id = None):
         img = requests.get(media_url, auth = OAuth1(client_key = config.consumer_key, client_secret = config.consumer_secret, resource_owner_key = config.access_token, resource_owner_secret = config.access_token_secret))
         filename = 'temp.png'
@@ -127,7 +144,6 @@ class bot:
             paragraph = text.splitlines()
             if '' in paragraph:
                 paragraph.remove('')
-            print(paragraph)
             clean_paragraph = 0
             for x in range(len(paragraph)):
                 if (paragraph[x]!=""):
@@ -187,13 +203,6 @@ class bot:
             return tweet
         except Exception as x:
             self.send_error(sender_id = sender_id, x = x)
-            pass
-
-    def delete_DM(self,id):
-        try:
-            self.api.delete_direct_message(id)
-        except Exception as x:
-            print(x)
             pass
         
     def delete_tweet(self, tweet_id:int = None, sender_id:int=None):
