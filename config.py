@@ -1,5 +1,6 @@
 consumer_key = "9E7vqiaOMzTrkMLHyoqzD9ciS"
 consumer_secret = "bbLqvPDTGhkcbqGNVe5bANG1HHRk7WL1x0aqwZRiRAPa6C97rQ"
+bearer_token = "AAAAAAAAAAAAAAAAAAAAABOjXQEAAAAAQFixFf8SeGcMFUdV11fbjMe5VfY%3DptzhtFSQ5JiJPKEEwr9BX1Cq3KHdRm56AaZlwb93NdyTJztTuA"
 access_token = "1267436526046044160-h9wTSPebUmf8Mi944E6GmD0LPRSfFl"
 access_token_secret = "niqgmCaETGxThEeuOp0JMidPSLq818ibJXHQBKTWbfE87"
 env_name = "development"
@@ -8,6 +9,7 @@ webhook_id = 1482532079351246849
 trigger = '!ptn'
 username = 'ptnmenfess'
 trigger_text_to_pic = '!gambar'
+trigger_poll = '!poll'
 trigger_report = '!lapor'
 report_recipient = 1416409954425053187
 base_id=1267436526046044160
