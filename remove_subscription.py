@@ -1,27 +1,18 @@
 from twitivity import Activity
 import config
 
-def test_remove_subscription():
+def remove_subscription():
     activity = Activity()
-    subscription_remove = activity.delete(webhook_id=config.webhook_id)
+    env = activity.webhooks()
+    print(env)
+    activity = Activity()
+    subscription_remove = activity.delete(webhook_id=env['environments'][0]['webhooks'][0]['id'])
     print(subscription_remove)
     if subscription_remove.status_code != 204:
         print("NOT DELETED")
         pass
-
-def test_list_subscription():
-    activity = Activity()
-    print(activity.webhooks())
-
-def subscribe():
-    activity = Activity()
-    print(
-        activity.register_webhook(
-            callback_url=config.callback+"/webhook/twitter"
-        )
-    )
-    print(activity.subscribe())
+    else:
+        print("DELETED")
 
 if __name__ == "__main__":
-    test_remove_subscription()
-    test_list_subscription()
+    remove_subscription()
